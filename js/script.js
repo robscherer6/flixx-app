@@ -248,6 +248,10 @@ async function search() {
 }
 
 function displaySearchResults(results) {
+  // Clear previous results
+  document.querySelector('#search-results').innerHTML = '';
+  document.querySelector('#search-results-heading').innerHTML = '';
+  document.querySelector('#pagination').innerHTML = '';
   results.forEach((result) => {
     const div = document.createElement('div');
     div.classList.add('card');
@@ -277,7 +281,45 @@ function displaySearchResults(results) {
     Results for ${global.search.term}</h2>`
     document.querySelector('#search-results').appendChild(div);
   });
+
+  displayPagination();
 }
+
+// Create & Display Pagination for Search
+function displayPagination() {
+  const div = document.createElement('div');
+  div.classList.add('pagination');
+  div.innerHTML = `
+    <button class="btn btn-primary" id="prev">Prev</button>
+    <button class="btn btn-primary" id="next">Next</button>
+    <div class="page-counter">Page ${global.search.page} of ${global.search.totalPages}</div>
+    `;
+  document.querySelector('#pagination').appendChild(div);
+
+  // Disable prevButton if on first page
+  if (global.search.page === 1) {
+    document.querySelector('#prev').disabled = true;
+  }
+  // Disable nextButton if on last page
+  if (global.search.page === global.search.totalPages) {
+    document.querySelector('#next').disabled = true;
+  }
+
+  // Next Page (needs be to async bc we are calling api)
+  document.querySelector('#next').addEventListener('click', async () => {
+    global.search.page++;
+    const { results, total_pages } = await searchAPIData();
+    displaySearchResults(results);
+  })
+
+  // Prev Page (needs be to async bc we are calling api)
+  document.querySelector('#prev').addEventListener('click', async () => {
+    global.search.page--;
+    const { results, total_pages } = await searchAPIData();
+    displaySearchResults(results);
+  })
+}
+
 
 // Display Slider Movies
 async function displaySlider() {
@@ -350,7 +392,7 @@ async function searchAPIData() {
 
   showSpinner();
 
-  const response = await fetch(`${API_URL}search/${global.search.type}?api_key=${API_KEY}&language=en-US&query=${global.search.term}`);
+  const response = await fetch(`${API_URL}search/${global.search.type}?api_key=${API_KEY}&language=en-US&query=${global.search.term}&page=${global.search.page}`);
 
   const data = await response.json();
 
