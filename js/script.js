@@ -5,6 +5,10 @@ const global = {
     type: '',
     page: 1,
     totalPages: 1
+  },
+  api: {
+    apiKey: 'cf0142b5cbc8938b61594d502443f4c4',
+    apiUrl: 'https://api.themoviedb.org/3/'
   }
 };
 
@@ -223,10 +227,14 @@ async function search() {
   global.search.term = urlParams.get('search-term');
 
   if (global.search.term !== '' && global.search.term !== null) {
-    // @todo - make request and display results
+    const { results, total_pages, page } = await searchAPIData();
+
+    if (results === 0) {
+      showAlert('')
+    }
   } else {
     // alert no search term
-    alert('Please enter a search term');
+    showAlert('Please enter a search term', 'error');
   }
 }
 
@@ -279,12 +287,29 @@ function initSwiper() {
 // Fetch data from TMDB API
 async function fetchAPIData(endpoint) {
 
-  const API_KEY = 'cf0142b5cbc8938b61594d502443f4c4';
-  const API_URL = 'https://api.themoviedb.org/3/';
+  const API_KEY = global.api.apiKey;
+  const API_URL = global.api.apiUrl;
 
   showSpinner();
 
   const response = await fetch(`${API_URL}${endpoint}?api_key=${API_KEY}&language=en-us`);
+
+  const data = await response.json();
+
+  hideSpinner();
+
+  return data;
+}
+
+// Make Request to Search
+async function searchAPIData() {
+
+  const API_KEY = global.api.apiKey;
+  const API_URL = global.api.apiUrl;
+
+  showSpinner();
+
+  const response = await fetch(`${API_URL}search/${global.search.type}?api_key=${API_KEY}&language=en-US&query=${global.search.term}`);
 
   const data = await response.json();
 
@@ -312,6 +337,18 @@ function highlightActiveLink () {
   })
 }
 
+// Show Alert
+function showAlert(message, className) {
+  const alertEl = document.createElement('div');
+  alertEl.classList.add('alert', className);
+  alertEl.appendChild(document.createTextNode(message));
+  document.querySelector('#alert').appendChild(alertEl);
+  setTimeout(() => {
+    alertEl.remove();
+  }, 2000)
+}
+
+// Adding commas to large movie budget numbers
 function addCommasToNum (num) {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
